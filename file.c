@@ -56,6 +56,39 @@ char* first_fit_alloc(size_t size, const char *variable_name) {
     return NULL;
 }
 
+// Función para imprimir el estado de la memoria
+void print_memory_status() {
+    printf("Estado actual de la memoria:\n");
+    int i = 0;
+
+    while (i < MEMORY_SIZE) {
+        if (memory_base[i] == 0) {
+            // Bloque libre
+            int free_block_start = i;
+            int free_block_size = 0;
+
+            // Contamos el tamaño del bloque libre
+            while (i < MEMORY_SIZE && memory_base[i] == 0) {
+                free_block_size++;
+                i++;
+            }
+            printf("Libre: %d bytes desde la dirección %p\n", free_block_size, &memory_base[free_block_start]);
+        } else {
+            // Bloque ocupado
+            char variable_name = memory_base[i];  // Tomamos el nombre de la variable
+            int occupied_block_start = i;
+            int occupied_block_size = 0;
+
+            // Contamos el tamaño del bloque ocupado
+            while (i < MEMORY_SIZE && memory_base[i] == variable_name) {
+                occupied_block_size++;
+                i++;
+            }
+            printf("Variable '%c': %d bytes desde la dirección %p\n", variable_name, occupied_block_size, &memory_base[occupied_block_start]);
+        }
+    }
+}
+
 void process_input_file(char* filename){
     FILE* file = fopen(filename, "r");
 
@@ -86,7 +119,7 @@ void process_input_file(char* filename){
                     printf("FREE %s\n", variable_name);
                 }
             } else if (strcmp(command, "PRINT") == 0) {
-                printf("PRINT\n");
+                print_memory_status();
             }
         }
     }
