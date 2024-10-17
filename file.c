@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MAX_VARIABLE_NAME 50
 #define MEMORY_SIZE 1024
@@ -23,7 +24,7 @@ void init_memory()
     printf("Memoria inicializada: %zu bytes disponibles.\n", memory_available);
 }
 
-char *first_fit_alloc(size_t size, const char *variable_name)
+char *first_fit_alloc(size_t size, const char *variable_name, bool isRealloc)
 {
     if (size > memory_available)
     {
@@ -52,7 +53,10 @@ char *first_fit_alloc(size_t size, const char *variable_name)
                 memset(&memory_base[free_block_start], variable_name[0], size);
 
                 memory_available -= size;
-                printf("ALLOC (First-Fit): Asignados %zu bytes a la variable '%s' en la direccion %p\n", size, variable_name, &memory_base[free_block_start]);
+                if (!isRealloc)
+                    printf("ALLOC (First-Fit): Asignados %zu bytes a la variable '%s' en la direccion %p\n", size, variable_name, &memory_base[free_block_start]);
+                else
+                    printf("REALLOC (First-Fit): Asignados %zu bytes a la variable '%s' en la direccion %p\n", size, variable_name, &memory_base[free_block_start]);
 
                 return &memory_base[free_block_start];
             }
@@ -64,7 +68,7 @@ char *first_fit_alloc(size_t size, const char *variable_name)
     return NULL;
 }
 
-char *best_fit_alloc(size_t size, const char *variable_name)
+char *best_fit_alloc(size_t size, const char *variable_name, bool isRealloc)
 {
     if (size > memory_available)
     {
@@ -109,7 +113,11 @@ char *best_fit_alloc(size_t size, const char *variable_name)
         memset(&memory_base[best_block_start], variable_name[0], size);
 
         memory_available -= size;
-        printf("ALLOC (Best-Fit): Asignados %zu bytes a la variable '%s' en la direccion %p\n", size, variable_name, &memory_base[best_block_start]);
+
+        if (!isRealloc)
+            printf("ALLOC (Best-Fit): Asignados %zu bytes a la variable '%s' en la direccion %p\n", size, variable_name, &memory_base[best_block_start]);
+        else
+            printf("REALLOC (Best-Fit): Asignados %zu bytes a la variable '%s' en la direccion %p\n", size, variable_name, &memory_base[best_block_start]);
 
         return &memory_base[best_block_start];
     }
@@ -118,7 +126,7 @@ char *best_fit_alloc(size_t size, const char *variable_name)
     return NULL;
 }
 
-char *worst_fit_alloc(size_t size, const char *variable_name)
+char *worst_fit_alloc(size_t size, const char *variable_name, bool isRealloc)
 {
     int worst_block_start = -1;
     int worst_block_size = 0;
@@ -167,12 +175,15 @@ char *worst_fit_alloc(size_t size, const char *variable_name)
     // Asignar memoria en el bloque más grande
     memset(&memory_base[worst_block_start], variable_name[0], size);
     memory_available -= size;
-    printf("ALLOC (Worst-Fit): Asignados %zu bytes a la variable '%s' en la direccion %p\n", size, variable_name, &memory_base[worst_block_start]);
+    if (!isRealloc)
+        printf("ALLOC (Worst-Fit): Asignados %zu bytes a la variable '%s' en la direccion %p\n", size, variable_name, &memory_base[worst_block_start]);
+    else
+        printf("REALLOC (Worst-Fit): Asignados %zu bytes a la variable '%s' en la direccion %p\n", size, variable_name, &memory_base[worst_block_start]);
 
     return &memory_base[worst_block_start];
 }
 
-void freeMemory(const char *variable_name)
+bool freeMemory(const char *variable_name, bool isRealloc)
 {
     int block_found = 0;
 
@@ -194,8 +205,8 @@ void freeMemory(const char *variable_name)
             // Marcar el bloque como libre (poniéndolo a 0)
             memset(&memory_base[block_start], 0, block_size);
             memory_available += block_size;
-
-            printf("FREE: Liberados %d bytes asociados a la variable '%s' en la direccion %p\n", block_size, variable_name, &memory_base[block_start]);
+            if (!isRealloc)
+                printf("FREE: Liberados %d bytes asociados a la variable '%s' en la direccion %p\n", block_size, variable_name, &memory_base[block_start]);
             block_found = 1;
             break;
         }
@@ -209,12 +220,15 @@ void freeMemory(const char *variable_name)
     {
         printf("Error: No se encontró un bloque asociado a la variable '%s'.\n", variable_name);
     }
+
+    return block_found;
 }
 
 // Función para imprimir el estado de la memoria
 void print_memory_status()
 {
-    printf("Estado actual de la memoria:\n");
+
+    printf("\nEstado actual de la memoria:\n");
     int i = 0;
 
     while (i < MEMORY_SIZE)
@@ -249,8 +263,21 @@ void print_memory_status()
             printf("Variable '%c': %d bytes desde la direccion %p\n", variable_name, occupied_block_size, &memory_base[occupied_block_start]);
         }
     }
+    printf("\n");
 }
 
+void *reallocMemory(size_t size, const char *variable_name, int algorithm)
+{
+    if (freeMemory(variable_name, true))
+    {
+        if (algorithm == 1)
+            first_fit_alloc(size, variable_name, true);
+        else if (algorithm == 2)
+            best_fit_alloc(size, variable_name, true);
+        else
+            worst_fit_alloc(size, variable_name, true);
+    }
+}
 
 void process_input_file(char *filename, int option)
 {
@@ -278,26 +305,26 @@ void process_input_file(char *filename, int option)
             {
                 if (sscanf(line, "%*s %s %zu", variable_name, &size) == 2)
                 {
-                    if(option == 1)
-                        first_fit_alloc(size, variable_name);
-                    else if(option == 2)
-                        best_fit_alloc(size, variable_name);
+                    if (option == 1)
+                        first_fit_alloc(size, variable_name, false);
+                    else if (option == 2)
+                        best_fit_alloc(size, variable_name, false);
                     else
-                        worst_fit_alloc(size, variable_name);
+                        worst_fit_alloc(size, variable_name, false);
                 }
             }
             else if (strcmp(command, "REALLOC") == 0)
             {
                 if (sscanf(line, "%*s %s %zu", variable_name, &size) == 2)
                 {
-                    printf("REALLOC %s %zu\n", variable_name, size);
+                    reallocMemory(size, variable_name, option);
                 }
             }
             else if (strcmp(command, "FREE") == 0)
             {
                 if (sscanf(line, "%*s %s", variable_name) == 1)
                 {
-                    freeMemory(variable_name);
+                    freeMemory(variable_name, false);
                 }
             }
             else if (strcmp(command, "PRINT") == 0)
