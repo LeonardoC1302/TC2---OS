@@ -3,6 +3,58 @@
 #include <string.h>
 
 #define MAX_VARIABLE_NAME 50
+#define MEMORY_SIZE 1024
+
+char *memory_base;  // Puntero a la memoria base
+size_t memory_available;  // Tamaño disponible de la memoria
+
+// Inicializa la memoria
+void init_memory() {
+    memory_base = (char *)malloc(MEMORY_SIZE);
+    if (memory_base == NULL) {
+        printf("Error: No se pudo asignar memoria.\n");
+        exit(1);
+    }
+    // Inicializamos la memoria con ceros
+    memset(memory_base, 0, MEMORY_SIZE);
+    memory_available = MEMORY_SIZE;
+    printf("Memoria inicializada: %zu bytes disponibles.\n", memory_available);
+}
+
+char* first_fit_alloc(size_t size, const char *variable_name) {
+    if (size > memory_available) {
+        printf("Error: No hay suficiente memoria disponible.\n");
+        return NULL;
+    }
+
+    // Recorrer la memoria buscando el primer espacio libre suficientemente grande
+    for (int i = 0; i < MEMORY_SIZE; ) {
+        if (memory_base[i] == 0) {
+            int free_block_start = i;
+            int free_block_size = 0;
+
+            while (i < MEMORY_SIZE && memory_base[i] == 0 && free_block_size < size) {
+                free_block_size++;
+                i++;
+            }
+
+            // Si encontramos un bloque libre lo suficientemente grande
+            if (free_block_size >= size) {
+                // Rellenar el bloque de memoria con el primer carácter de variable_name
+                memset(&memory_base[free_block_start], variable_name[0], size);
+
+                memory_available -= size;
+                printf("ALLOC: Asignados %zu bytes a la variable '%s' en la dirección %p\n", size, variable_name, &memory_base[free_block_start]);
+
+                return &memory_base[free_block_start];
+            }
+        }
+        i++;
+    }
+
+    printf("Error: No se encontró un bloque libre suficientemente grande.\n");
+    return NULL;
+}
 
 void process_input_file(char* filename){
     FILE* file = fopen(filename, "r");
@@ -23,7 +75,7 @@ void process_input_file(char* filename){
         if(sscanf(line, "%s", command) == 1){
             if (strcmp(command, "ALLOC") == 0) {
                 if (sscanf(line, "%*s %s %zu", variable_name, &size) == 2) {
-                    printf("alloc %s %zu\n", variable_name, size);
+                    first_fit_alloc(size, variable_name);
                 }
             } else if (strcmp(command, "REALLOC") == 0){
                 if (sscanf(line, "%*s %s %zu", variable_name, &size) == 2) {
@@ -46,6 +98,10 @@ int main(int argc, char* argv[]){
         printf("Uso: %s <archivo_de_entrada>\n", argv[0]);
         return 1;
     }
+    init_memory();
     process_input_file(argv[1]);
+
+    // Liberar la memoria
+    free(memory_base);
     return 0;
 }
