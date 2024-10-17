@@ -252,7 +252,7 @@ void print_memory_status()
 }
 
 
-void process_input_file(char *filename)
+void process_input_file(char *filename, int option)
 {
     FILE *file = fopen(filename, "r");
 
@@ -278,9 +278,12 @@ void process_input_file(char *filename)
             {
                 if (sscanf(line, "%*s %s %zu", variable_name, &size) == 2)
                 {
-                    // first_fit_alloc(size, variable_name);
-                    best_fit_alloc(size, variable_name);
-                    // worst_fit_alloc(size, variable_name);
+                    if(option == 1)
+                        first_fit_alloc(size, variable_name);
+                    else if(option == 2)
+                        best_fit_alloc(size, variable_name);
+                    else
+                        worst_fit_alloc(size, variable_name);
                 }
             }
             else if (strcmp(command, "REALLOC") == 0)
@@ -308,13 +311,14 @@ void process_input_file(char *filename)
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        printf("Uso: %s <archivo_de_entrada>\n", argv[0]);
+        printf("Uso: %s <archivo_de_entrada> <option>\n", argv[0]);
         return 1;
     }
     init_memory();
-    process_input_file(argv[1]);
+    int no_option = atoi(argv[2]);
+    process_input_file(argv[1], no_option);
 
     // Liberar la memoria
     free(memory_base);
