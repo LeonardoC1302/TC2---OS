@@ -1,4 +1,7 @@
 # Administración de Memoria
+Leonardo Céspedes Tenorio - 2022080602
+Kevin Chang Chang - 2022039050
+Frankmin Feng Zhong - 202208924
 
 ## ¿Cómo se compila?
 Asegurarse de tener el compilador de C instalado localmente. Utilizar el siguiente comando para compilar y obtener un archivo ejecutable:
