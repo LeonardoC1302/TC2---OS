@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #define MAX_VARIABLE_NAME 50
-#define MEMORY_SIZE 1024
+#define MEMORY_SIZE 2000
 
 char *memory_base;       // Puntero a la memoria base
 size_t memory_available; // Tamaño disponible de la memoria
@@ -64,7 +64,7 @@ char *first_fit_alloc(size_t size, const char *variable_name, bool isRealloc)
         i++;
     }
 
-    printf("Error: No se encontró un bloque libre suficientemente grande.\n");
+    printf("Error: No se encontro un bloque libre suficientemente grande.\n");
     return NULL;
 }
 
@@ -122,7 +122,7 @@ char *best_fit_alloc(size_t size, const char *variable_name, bool isRealloc)
         return &memory_base[best_block_start];
     }
 
-    printf("Error: No se encontró un bloque libre suficientemente grande.\n");
+    printf("Error: No se encontro un bloque libre suficientemente grande.\n");
     return NULL;
 }
 
@@ -218,7 +218,7 @@ bool freeMemory(const char *variable_name, bool isRealloc)
 
     if (!block_found)
     {
-        printf("Error: No se encontró un bloque asociado a la variable '%s'.\n", variable_name);
+        printf("Error: No se encontro un bloque asociado a la variable '%s'.\n", variable_name);
     }
 
     return block_found;
